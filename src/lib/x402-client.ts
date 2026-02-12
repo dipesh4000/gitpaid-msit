@@ -1,19 +1,51 @@
 import axios from 'axios'
 import { toast } from 'sonner'
+import { BrowserProvider, Contract } from 'ethers'
 
-// Placeholder for actual payment logic using CDP or window.ethereum
-// In a real app, this would trigger a wallet transaction.
+const ERC20_ABI = ['function transfer(address to, uint256 amount) returns (bool)']
+const BASE_SEPOLIA_CHAIN_ID = '0x14a34' // 84532 in hex
+
 async function performPayment(details: any) {
-    console.log('Initiating payment...', details)
-    toast.info(`Please pay ${details.amount} USDC to ${details.recipient}`)
+    if (!window.ethereum) {
+        throw new Error('MetaMask not found')
+    }
 
-    // Simulate payment delay
-    await new Promise(resolve => setTimeout(resolve, 2000))
+    // Switch to Base Sepolia if needed
+    try {
+        await window.ethereum.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: BASE_SEPOLIA_CHAIN_ID }],
+        })
+    } catch (switchError: any) {
+        if (switchError.code === 4902) {
+            await window.ethereum.request({
+                method: 'wallet_addEthereumChain',
+                params: [{
+                    chainId: BASE_SEPOLIA_CHAIN_ID,
+                    chainName: 'Base Sepolia',
+                    nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+                    rpcUrls: ['https://sepolia.base.org'],
+                    blockExplorerUrls: ['https://sepolia.basescan.org']
+                }]
+            })
+        }
+    }
 
-    // Mock TX Hash
-    const mockTxHash = '0x' + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('')
-    toast.success('Payment sent! Verifying...')
-    return mockTxHash
+    const provider = new BrowserProvider(window.ethereum)
+    const signer = await provider.getSigner()
+    
+    toast.info(`Sending ${details.amount} USDC payment...`)
+    
+    const usdcContract = new Contract(details.tokenAddress, ERC20_ABI, signer)
+    const amountInWei = BigInt(details.amount * 1_000_000)
+    
+    const tx = await usdcContract.transfer(details.recipient, amountInWei)
+    toast.info('Transaction sent! Waiting for confirmation...')
+    
+    await tx.wait()
+    toast.success('Payment confirmed!')
+    
+    return tx.hash
 }
 
 export const x402Client = {

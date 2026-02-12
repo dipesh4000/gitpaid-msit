@@ -2,6 +2,7 @@ import { CdpClient } from '@coinbase/cdp-sdk'
 
 const API_KEY_NAME = process.env.CDP_API_KEY_NAME
 const API_KEY_SECRET = process.env.CDP_API_KEY_SECRET
+const WALLET_SECRET = process.env.CDP_WALLET_SECRET
 
 let cdpClient: any = null
 
@@ -10,6 +11,7 @@ if (API_KEY_NAME && API_KEY_SECRET) {
         cdpClient = new CdpClient({
             apiKeyName: API_KEY_NAME,
             privateKey: API_KEY_SECRET,
+            walletSecret: WALLET_SECRET
         } as any)
     } catch (e) {
         console.error('Failed to initialize CDP Client', e)

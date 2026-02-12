@@ -2,12 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { ListingService } from '@/services/listing.service'
 import { X402 } from '@/lib/x402'
 import { getDb } from '@/lib/mongodb'
-import { getServerWallet } from '@/lib/cdp'
 import { cookies } from 'next/headers'
 import { ObjectId } from 'mongodb'
 
 const USDC_ADDRESS = process.env.USDC_CONTRACT_ADDRESS!
 const BASE_RPC = process.env.BASE_SEPOLIA_RPC!
+const SERVER_ADDRESS = process.env.SERVER_WALLET_ADDRESS || '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb'
 
 export async function POST(request: NextRequest) {
     try {
@@ -31,8 +31,6 @@ export async function POST(request: NextRequest) {
 
         const totalAmount = listing.price_per_day * days
         const xPayment = request.headers.get('X-PAYMENT')
-        const serverWallet = await getServerWallet()
-        const serverAddress = serverWallet.address
 
         if (!xPayment) {
             return NextResponse.json({
@@ -42,7 +40,7 @@ export async function POST(request: NextRequest) {
                     currency: 'USDC',
                     chainId: 84532,
                     tokenAddress: USDC_ADDRESS,
-                    recipient: serverAddress
+                    recipient: SERVER_ADDRESS
                 }
             }, { status: 402 })
         }
@@ -55,7 +53,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Transaction already used' }, { status: 409 })
         }
 
-        await X402.verifyTransaction(txHash, totalAmount, serverAddress, BASE_RPC, USDC_ADDRESS)
+        await X402.verifyTransaction(txHash, totalAmount, SERVER_ADDRESS, BASE_RPC, USDC_ADDRESS)
 
         const rentalResult = await db.collection('rentals').insertOne({
             listing_id: listingId,

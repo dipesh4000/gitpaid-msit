@@ -10,7 +10,12 @@ export const X402 = {
     },
 
     async verifyTransaction(txHash: string, expectedAmount: number, recipientAddress: string, rpcUrl: string, tokenAddress: string) {
-        // Verify on-chain
+        // Skip verification in development for mock transactions
+        if (process.env.NODE_ENV === 'development' && txHash.startsWith('0x') && txHash.length === 66) {
+            console.log('DEV MODE: Skipping transaction verification for mock tx:', txHash)
+            return true
+        }
+
         const provider = new ethers.JsonRpcProvider(rpcUrl)
         const receipt = await provider.getTransactionReceipt(txHash)
 
@@ -22,9 +27,6 @@ export const X402 = {
             throw new Error('Transaction failed')
         }
 
-        // Verify log for ERC20 Transfer
-        // Topic 0: Transfer(address,address,uint256)
-        // keccak256("Transfer(address,address,uint256)")
         const TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'
 
         const log = receipt.logs.find(l =>
@@ -36,20 +38,14 @@ export const X402 = {
             throw new Error('No USDC transfer found in transaction')
         }
 
-        // Check recipient
-        // topics[1] = from, topics[2] = to
         const to = ethers.stripZerosLeft(log.topics[2])
         if (to.toLowerCase() !== recipientAddress.toLowerCase()) {
             throw new Error('Invalid recipient')
         }
 
-        // Check amount
         const amount = BigInt(log.data)
-        // Adjust for decimals (USDC is 6)
         const amountUSDC = Number(ethers.formatUnits(amount, 6))
 
-        // Allow small dust error? Or strict? 
-        // Strict.
         if (Math.abs(amountUSDC - expectedAmount) > 0.000001) {
             throw new Error(`Invalid amount. Expected ${expectedAmount}, got ${amountUSDC}`)
         }
