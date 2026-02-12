@@ -28,12 +28,24 @@ export default function CreateListingPage() {
         if (!price) return
         setLoading(true)
 
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        try {
+            const response = await fetch('/api/listings/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pricePerDay: parseFloat(price) })
+            })
 
-        setLoading(false)
-        toast.success('Listing created successfully!')
-        router.push('/dashboard')
+            if (!response.ok) {
+                throw new Error('Failed to create listing')
+            }
+
+            toast.success('Listing created successfully!')
+            router.push('/dashboard')
+        } catch (error) {
+            toast.error('Failed to create listing')
+        } finally {
+            setLoading(false)
+        }
     }
 
     return (

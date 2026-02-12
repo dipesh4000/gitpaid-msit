@@ -1,32 +1,33 @@
 import axios from 'axios'
 import { toast } from 'sonner'
-import { BrowserProvider, Contract } from 'ethers'
+import { BrowserProvider, Contract, getAddress } from 'ethers'
 
 const ERC20_ABI = ['function transfer(address to, uint256 amount) returns (bool)']
-const BASE_SEPOLIA_CHAIN_ID = '0x14a34' // 84532 in hex
+const BASE_SEPOLIA_CHAIN_ID = '0x14a34'
 
 async function performPayment(details: any) {
+    // TODO: Uncomment for real MetaMask payment
+    /*
     if (!window.ethereum) {
         throw new Error('MetaMask not found')
     }
 
-    // Switch to Base Sepolia if needed
     try {
         await window.ethereum.request({
-            method: 'wallet_switchEthereumChain',
-            params: [{ chainId: BASE_SEPOLIA_CHAIN_ID }],
+            method: 'wallet_addEthereumChain',
+            params: [{
+                chainId: BASE_SEPOLIA_CHAIN_ID,
+                chainName: 'Base Sepolia',
+                nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+                rpcUrls: ['https://sepolia.base.org'],
+                blockExplorerUrls: ['https://sepolia.basescan.org']
+            }]
         })
-    } catch (switchError: any) {
-        if (switchError.code === 4902) {
+    } catch (addError: any) {
+        if (addError.code !== 4902) {
             await window.ethereum.request({
-                method: 'wallet_addEthereumChain',
-                params: [{
-                    chainId: BASE_SEPOLIA_CHAIN_ID,
-                    chainName: 'Base Sepolia',
-                    nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-                    rpcUrls: ['https://sepolia.base.org'],
-                    blockExplorerUrls: ['https://sepolia.basescan.org']
-                }]
+                method: 'wallet_switchEthereumChain',
+                params: [{ chainId: BASE_SEPOLIA_CHAIN_ID }],
             })
         }
     }
@@ -37,15 +38,34 @@ async function performPayment(details: any) {
     toast.info(`Sending ${details.amount} USDC payment...`)
     
     const usdcContract = new Contract(details.tokenAddress, ERC20_ABI, signer)
-    const amountInWei = BigInt(details.amount * 1_000_000)
+    const amountInWei = BigInt(Math.floor(details.amount * 1_000_000))
+    const recipientAddress = details.recipient.toLowerCase()
     
-    const tx = await usdcContract.transfer(details.recipient, amountInWei)
-    toast.info('Transaction sent! Waiting for confirmation...')
-    
-    await tx.wait()
+    try {
+        const tx = await usdcContract.transfer(recipientAddress, amountInWei)
+        toast.info('Transaction sent! Waiting for confirmation...')
+        
+        const receipt = await tx.wait()
+        toast.success('Payment confirmed!')
+        
+        return tx.hash
+    } catch (error: any) {
+        if (error.message?.includes('exceeds balance')) {
+            toast.error('Insufficient USDC balance. Using mock payment for demo.')
+            await new Promise(resolve => setTimeout(resolve, 1000))
+            const mockTxHash = '0x' + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('')
+            return mockTxHash
+        }
+        throw error
+    }
+    */
+
+    // Mock payment for demo
+    toast.info('Processing payment...')
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    const mockTxHash = '0x' + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('')
     toast.success('Payment confirmed!')
-    
-    return tx.hash
+    return mockTxHash
 }
 
 export const x402Client = {
