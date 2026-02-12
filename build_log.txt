@@ -1,0 +1,30 @@
+▲ Next.js 16.1.6 (Turbopack)
+- Environments: .env.local
+
+  Creating an optimized production build ...
+
+> Build error occurred
+Error: Turbopack build failed with 1 errors:
+./node_modules/image-hash/lib/index.js:18:21
+Module not found: Can't resolve 'file-type'
+[0m [90m 16 |[39m [36mconst[39m fs_1 [33m=[39m __importDefault(require([32m"fs"[39m))[33m;[39m
+ [90m 17 |[39m [36mconst[39m buffer_1 [33m=[39m require([32m"buffer"[39m)[33m;[39m
+[31m[1m>[22m[39m[90m 18 |[39m [36mconst[39m file_type_1 [33m=[39m require([32m"file-type"[39m)[33m;[39m
+ [90m    |[39m                     [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 19 |[39m [36mconst[39m jpeg_js_1 [33m=[39m __importDefault(require([32m"jpeg-js"[39m))[33m;[39m
+ [90m 20 |[39m [36mconst[39m pngjs_1 [33m=[39m require([32m"pngjs"[39m)[33m;[39m
+ [90m 21 |[39m [36mconst[39m url_1 [33m=[39m require([32m"url"[39m)[33m;[39m[0m
+
+
+
+Import trace:
+  App Route:
+    ./node_modules/image-hash/lib/index.js
+    ./src/lib/verification/hash.ts
+    ./src/services/verification.service.ts
+    ./src/app/api/cron/verify/route.ts
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
